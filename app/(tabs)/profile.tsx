@@ -1,17 +1,27 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [currentXP, setCurrentXP] = useState(2340);
+  const [currentLevel, setCurrentLevel] = useState(5);
+  const [nextLevelXP] = useState(3000);
+  const [dailyStreak, setDailyStreak] = useState(12);
+  
+  const levelProgress = (currentXP % 1000) / 10; // Progress to next level
 
   const achievements = [
-    { id: 1, title: 'First Course', description: 'Completed your first course', icon: 'trophy', color: '#F59E0B', earned: true },
-    { id: 2, title: 'Week Streak', description: '7 days learning streak', icon: 'flame', color: '#EF4444', earned: true },
-    { id: 3, title: 'Fast Learner', description: 'Completed 5 courses in a month', icon: 'flash', color: '#8B5CF6', earned: false },
-    { id: 4, title: 'Expert', description: 'Earned 10 certificates', icon: 'school', color: '#10B981', earned: false },
+    { id: 1, title: 'First Course', description: 'Completed your first course', icon: 'trophy', color: '#F59E0B', earned: true, xp: 100 },
+    { id: 2, title: 'Week Streak', description: '7 days learning streak', icon: 'flame', color: '#EF4444', earned: true, xp: 200 },
+    { id: 3, title: 'Fast Learner', description: 'Completed 5 courses in a month', icon: 'flash', color: '#8B5CF6', earned: false, xp: 500 },
+    { id: 4, title: 'Expert', description: 'Earned 10 certificates', icon: 'school', color: '#10B981', earned: false, xp: 1000 },
+    { id: 5, title: 'Night Owl', description: 'Study after 10 PM for 5 days', icon: 'moon', color: '#6366F1', earned: true, xp: 150 },
+    { id: 6, title: 'Early Bird', description: 'Study before 8 AM for 7 days', icon: 'sunny', color: '#F59E0B', earned: false, xp: 300 },
   ];
 
   const recentActivity = [
@@ -30,7 +40,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
           {/* Profile Header */}
           <View style={styles.profileHeader}>
             <View style={styles.profilePhotoContainer}>
@@ -38,22 +48,57 @@ export default function ProfileScreen() {
                 <Ionicons name="person" size={40} color="#3B82F6" />
               </View>
               <View style={styles.levelBadge}>
-                <Text style={styles.levelText}>Pro</Text>
+                <Text style={styles.levelText}>L{currentLevel}</Text>
               </View>
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{user?.name || 'Student'}</Text>
               <Text style={styles.profileEmail}>{user?.email}</Text>
-              <View style={styles.profileStats}>
-                <View style={styles.profileStat}>
-                  <Text style={styles.profileStatNumber}>Level 5</Text>
-                  <Text style={styles.profileStatLabel}>Learner</Text>
+              
+              {/* XP Progress */}
+              <View style={styles.xpContainer}>
+                <View style={styles.xpHeader}>
+                  <Text style={styles.xpText}>{currentXP} XP</Text>
+                  <Text style={styles.xpNext}>Next: {nextLevelXP} XP</Text>
                 </View>
-                <View style={styles.profileStat}>
-                  <Text style={styles.profileStatNumber}>2,340</Text>
-                  <Text style={styles.profileStatLabel}>XP Points</Text>
+                <View style={styles.xpBar}>
+                  <View style={[styles.xpFill, { width: `${levelProgress}%` }]} />
                 </View>
               </View>
+              
+              <View style={styles.profileStats}>
+                <View style={styles.profileStat}>
+                  <Text style={styles.profileStatNumber}>Level {currentLevel}</Text>
+                  <Text style={styles.profileStatLabel}>Current Level</Text>
+                </View>
+                <View style={styles.profileStat}>
+                  <Text style={styles.profileStatNumber}>{dailyStreak} days</Text>
+                  <Text style={styles.profileStatLabel}>Streak 🔥</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Daily Challenge */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Daily Challenge</Text>
+            <View style={styles.challengeCard}>
+              <View style={styles.challengeIcon}>
+                <Ionicons name="trophy" size={24} color="#F59E0B" />
+              </View>
+              <View style={styles.challengeContent}>
+                <Text style={styles.challengeTitle}>Complete 2 Lessons</Text>
+                <Text style={styles.challengeDescription}>Earn 50 XP bonus points</Text>
+                <View style={styles.challengeProgress}>
+                  <View style={styles.challengeBar}>
+                    <View style={[styles.challengeFill, { width: '50%' }]} />
+                  </View>
+                  <Text style={styles.challengeText}>1/2 completed</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.challengeButton}>
+                <Text style={styles.challengeButtonText}>Start</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -119,6 +164,14 @@ export default function ProfileScreen() {
                   ]}>
                     {achievement.description}
                   </Text>
+                  <View style={styles.achievementXP}>
+                    <Text style={[
+                      styles.achievementXPText,
+                      !achievement.earned && styles.achievementXPLocked
+                    ]}>
+                      +{achievement.xp} XP
+                    </Text>
+                  </View>
                   {!achievement.earned && (
                     <View style={styles.lockOverlay}>
                       <Ionicons name="lock-closed" size={16} color="#9CA3AF" />
@@ -183,7 +236,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 20 : 20,
     paddingBottom: 100,
   },
   profileHeader: {
@@ -255,6 +307,101 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     marginTop: 2,
+  },
+  xpContainer: {
+    marginVertical: 12,
+    width: '100%',
+  },
+  xpHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  xpText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#3B82F6',
+  },
+  xpNext: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  xpBar: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+  },
+  xpFill: {
+    height: '100%',
+    backgroundColor: '#3B82F6',
+    borderRadius: 4,
+  },
+  challengeCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  challengeIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  challengeContent: {
+    flex: 1,
+  },
+  challengeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  challengeDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  challengeProgress: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  challengeBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  challengeFill: {
+    height: '100%',
+    backgroundColor: '#F59E0B',
+    borderRadius: 2,
+  },
+  challengeText: {
+    fontSize: 12,
+    color: '#F59E0B',
+    fontWeight: '600',
+  },
+  challengeButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  challengeButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
   section: {
     marginBottom: 24,
@@ -389,6 +536,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   achievementDescriptionLocked: {
+    color: '#9CA3AF',
+  },
+  achievementXP: {
+    marginTop: 4,
+  },
+  achievementXPText: {
+    fontSize: 12,
+    color: '#10B981',
+    fontWeight: 'bold',
+  },
+  achievementXPLocked: {
     color: '#9CA3AF',
   },
   lockOverlay: {

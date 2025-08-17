@@ -1,17 +1,36 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, StatusBar, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
+  const insets = useSafeAreaInsets();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [autoDownload, setAutoDownload] = useState(false);
   const [offlineMode, setOfflineMode] = useState(true);
   const [downloadQuality, setDownloadQuality] = useState('HD');
   const [language, setLanguage] = useState('English');
+  const [storageUsed] = useState(2.4); // GB
+  const [totalStorage] = useState(16); // GB
+  const [showQualityModal, setShowQualityModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+
+  const qualityOptions = [
+    { id: 'SD', label: 'SD (480p)', description: 'Lower quality, less storage' },
+    { id: 'HD', label: 'HD (720p)', description: 'Good quality, moderate storage' },
+    { id: 'Full HD', label: 'Full HD (1080p)', description: 'Best quality, more storage' },
+  ];
+
+  const languageOptions = [
+    { id: 'English', label: 'English', flag: '🇺🇸' },
+    { id: 'Türkçe', label: 'Türkçe', flag: '🇹🇷' },
+    { id: 'Español', label: 'Español', flag: '🇪🇸' },
+    { id: 'Français', label: 'Français', flag: '🇫🇷' },
+  ];
 
   const handleLogout = () => {
     Alert.alert(
@@ -31,36 +50,20 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleDownloadQuality = () => {
-    Alert.alert(
-      'Download Quality',
-      'Choose video quality for downloads',
-      [
-        { text: 'SD', onPress: () => setDownloadQuality('SD') },
-        { text: 'HD', onPress: () => setDownloadQuality('HD') },
-        { text: 'Full HD', onPress: () => setDownloadQuality('Full HD') },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+  const handleQualitySelect = (quality: string) => {
+    setDownloadQuality(quality);
+    setShowQualityModal(false);
   };
 
-  const handleLanguage = () => {
-    Alert.alert(
-      'Language',
-      'Choose your preferred language',
-      [
-        { text: 'English', onPress: () => setLanguage('English') },
-        { text: 'Türkçe', onPress: () => setLanguage('Türkçe') },
-        { text: 'Español', onPress: () => setLanguage('Español') },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+  const handleLanguageSelect = (lang: string) => {
+    setLanguage(lang);
+    setShowLanguageModal(false);
   };
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
+        <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
           {/* User Info Header */}
           <View style={styles.userCard}>
             <View style={styles.userAvatar}>
@@ -161,7 +164,7 @@ export default function SettingsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>App Settings</Text>
             <View style={styles.settingsCard}>
-              <TouchableOpacity style={styles.settingItem} onPress={handleDownloadQuality}>
+              <TouchableOpacity style={styles.settingItem} onPress={() => setShowQualityModal(true)}>
                 <View style={styles.settingLeft}>
                   <View style={[styles.settingIcon, { backgroundColor: '#8B5CF6' + '20' }]}>
                     <Ionicons name="videocam" size={20} color="#8B5CF6" />
@@ -174,7 +177,7 @@ export default function SettingsScreen() {
                 <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.settingItem} onPress={handleLanguage}>
+              <TouchableOpacity style={styles.settingItem} onPress={() => setShowLanguageModal(true)}>
                 <View style={styles.settingLeft}>
                   <View style={[styles.settingIcon, { backgroundColor: '#EF4444' + '20' }]}>
                     <Ionicons name="language" size={20} color="#EF4444" />
@@ -195,6 +198,40 @@ export default function SettingsScreen() {
                   <View style={styles.settingContent}>
                     <Text style={styles.settingTitle}>Clear Cache</Text>
                     <Text style={styles.settingDescription}>Free up storage space</Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Storage Management */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Storage Management</Text>
+            <View style={styles.settingsCard}>
+              <View style={styles.settingItem}>
+                <View style={styles.settingLeft}>
+                  <View style={[styles.settingIcon, { backgroundColor: '#3B82F6' + '20' }]}>
+                    <Ionicons name="server" size={20} color="#3B82F6" />
+                  </View>
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingTitle}>Downloaded Content</Text>
+                    <Text style={styles.settingDescription}>{storageUsed} GB of {totalStorage} GB used</Text>
+                    <View style={styles.storageBar}>
+                      <View style={[styles.storageFill, { width: `${(storageUsed / totalStorage) * 100}%` }]} />
+                    </View>
+                  </View>
+                </View>
+              </View>
+              
+              <TouchableOpacity style={styles.settingItem}>
+                <View style={styles.settingLeft}>
+                  <View style={[styles.settingIcon, { backgroundColor: '#10B981' + '20' }]}>
+                    <Ionicons name="folder" size={20} color="#10B981" />
+                  </View>
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingTitle}>Manage Downloads</Text>
+                    <Text style={styles.settingDescription}>View and delete downloaded courses</Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
@@ -266,6 +303,76 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Download Quality Modal */}
+      <Modal
+        visible={showQualityModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowQualityModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Download Quality</Text>
+              <TouchableOpacity onPress={() => setShowQualityModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            
+            {qualityOptions.map((option) => (
+              <TouchableOpacity
+                key={option.id}
+                style={styles.modalOption}
+                onPress={() => handleQualitySelect(option.id)}
+              >
+                <View style={styles.modalOptionContent}>
+                  <Text style={styles.modalOptionTitle}>{option.label}</Text>
+                  <Text style={styles.modalOptionDescription}>{option.description}</Text>
+                </View>
+                {downloadQuality === option.id && (
+                  <Ionicons name="checkmark" size={20} color="#3B82F6" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Language Modal */}
+      <Modal
+        visible={showLanguageModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLanguageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Language</Text>
+              <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            
+            {languageOptions.map((option) => (
+              <TouchableOpacity
+                key={option.id}
+                style={styles.modalOption}
+                onPress={() => handleLanguageSelect(option.id)}
+              >
+                <View style={styles.modalOptionContent}>
+                  <Text style={styles.modalOptionFlag}>{option.flag}</Text>
+                  <Text style={styles.modalOptionTitle}>{option.label}</Text>
+                </View>
+                {language === option.id && (
+                  <Ionicons name="checkmark" size={20} color="#3B82F6" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -280,7 +387,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 20 : 20,
     paddingBottom: 100,
   },
   userCard: {
@@ -414,5 +520,76 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  storageBar: {
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+    marginTop: 8,
+  },
+  storageFill: {
+    height: '100%',
+    backgroundColor: '#3B82F6',
+    borderRadius: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F9FAFB',
+  },
+  modalOptionContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  modalOptionTitle: {
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  modalOptionDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  modalOptionFlag: {
+    fontSize: 20,
+    marginRight: 12,
   },
 });
