@@ -1,14 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs, router } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/HapticTab';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { useAuth } from '@/context/AuthContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -67,7 +65,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: '',
-          tabBarIcon: ({ color }) => <Ionicons name="settings" size={32} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="cog" size={32} color={color} />,
         }}
       />
       <Tabs.Screen
